@@ -1,75 +1,100 @@
-import type { NotificationItem } from "@/lib/types";
+import { stampOrder } from "@/lib/format";
+import type { Notification } from "@/lib/types";
 
-/** SIMULATED notification feed for the demo applicant identity. */
-export const notifications: NotificationItem[] = [
+/**
+ * SIMULATED notification feed for the demo applicant identity. Every notice
+ * references an application that exists in the shared record set, and the feed
+ * is ordered newest first against the frozen simulation clock.
+ */
+const feed: Notification[] = [
   {
-    id: "NTF-4412",
-    title: "Fire NOC stage is on hold",
+    id: "NTF-5580",
+    title: "Action required: upload revised site plan",
     message:
-      "Stage 4 cannot progress until the Pollution Control consent reference is published. No action is required from you right now.",
-    at: "12 Mar 2026, 11:12",
-    severity: "warning",
-    read: false,
-    channel: "portal",
-    applicationId: "GS-2026-00142",
-  },
-  {
-    id: "NTF-4411",
-    title: "Effluent report received by the board",
-    message:
-      "Your document was submitted once and is now under verification by the Pollution Control Board.",
-    at: "12 Mar 2026, 10:48",
-    severity: "info",
-    read: false,
-    channel: "portal",
-    applicationId: "GS-2026-00142",
-  },
-  {
-    id: "NTF-4408",
-    title: "Action required: confirm property tax payment",
-    message:
-      "Application GS-2026-00119 needs payment confirmation of INR 18,400 to proceed.",
-    at: "12 Mar 2026, 08:20",
+      "The Pollution Control Board needs the inspection access marked on your site plan before an inspection slot can be booked on GS-2026-00142. Demo deadline 30 Sep 2026.",
+    at: "27 Sep 2026, 10:44",
     severity: "error",
     read: false,
-    channel: "sms",
-    applicationId: "GS-2026-00119",
-  },
-  {
-    id: "NTF-4402",
-    title: "Building plan set under review",
-    message:
-      "The municipal building permission desk is reviewing the revised plan set for GS-2026-00155.",
-    at: "12 Mar 2026, 10:12",
-    severity: "info",
-    read: true,
-    channel: "email",
-    applicationId: "GS-2026-00155",
-  },
-  {
-    id: "NTF-4391",
-    title: "Trade licence renewed",
-    message:
-      "Trade licence TL/ND/2025/2210 is available in your document vault, valid until 31 Mar 2027.",
-    at: "02 Mar 2026, 17:06",
-    severity: "success",
-    read: true,
     channel: "portal",
+    applicationId: "GS-2026-00142",
+  },
+  {
+    id: "NTF-5578",
+    title: "Consent application moved to Under Review",
+    message:
+      "Consent reference PCB/CTE/2026/0418 is now being examined. Land verification has already been approved and published to the shared record.",
+    at: "27 Sep 2026, 10:42",
+    severity: "info",
+    read: false,
+    channel: "sms",
+    applicationId: "GS-2026-00142",
+  },
+  {
+    id: "NTF-5561",
+    title: "Action required: provide building layout",
+    message:
+      "The Fire Department cannot assign an occupancy class to GS-2026-00137 without a scaled building layout. Demo deadline 29 Sep 2026.",
+    at: "26 Sep 2026, 11:20",
+    severity: "error",
+    read: false,
+    channel: "email",
     applicationId: "GS-2026-00137",
   },
   {
-    id: "NTF-4380",
-    title: "Fire NOC issued",
+    id: "NTF-5552",
+    title: "Land verification approved",
     message:
-      "Renewed no-objection certificate FS/2026/0442 has been published to your vault.",
-    at: "27 Feb 2026, 12:16",
+      "Parcel 118/B is verified with no registered encumbrance. The verified parcel record has been forwarded to the pollution consent register automatically.",
+    at: "26 Sep 2026, 16:18",
+    severity: "success",
+    read: true,
+    channel: "portal",
+    applicationId: "GS-2026-00142",
+  },
+  {
+    id: "NTF-5540",
+    title: "Effluent report accepted",
+    message:
+      "Your third-party analysis report was accepted on first submission and is now part of the shared document set for GS-2026-00142.",
+    at: "22 Sep 2026, 14:10",
     severity: "success",
     read: true,
     channel: "email",
-    applicationId: "GS-2026-00098",
+    applicationId: "GS-2026-00142",
+  },
+  {
+    id: "NTF-5523",
+    title: "Hazardous waste authorisation issued",
+    message:
+      "Authorisation HW/ND/2026/0142 is available in your document vault, with conditions recorded against the waste streams.",
+    at: "22 Sep 2026, 16:52",
+    severity: "success",
+    read: true,
+    channel: "portal",
+    applicationId: "GS-2026-00115",
+  },
+  {
+    id: "NTF-5517",
+    title: "Building plan set under review",
+    message:
+      "The municipal building permission desk is reviewing the floor-area ratio on GS-2026-00129. Setback compliance is already confirmed.",
+    at: "25 Sep 2026, 15:05",
+    severity: "info",
+    read: true,
+    channel: "portal",
+    applicationId: "GS-2026-00129",
   },
 ];
+
+export const notifications: Notification[] = feed.sort(
+  (a, b) => stampOrder(b.at) - stampOrder(a.at),
+);
 
 export const unreadNotificationCount = notifications.filter(
   (notification) => !notification.read,
 ).length;
+
+export const notificationsForApplication = (applicationId: string): Notification[] =>
+  notifications.filter(
+    (notification) => notification.applicationId === applicationId,
+  );

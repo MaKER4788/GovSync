@@ -1,11 +1,13 @@
 import { ArrowUpRight, Building2, CalendarClock, Layers, User } from "lucide-react";
 import Link from "next/link";
 
-import { StatusBadge } from "@/components/govsync/status-badge";
-import { workflowProgress } from "@/lib/data/applications";
+import { ApplicationStatusBadge } from "@/components/govsync/status-badge";
+import { applicationProgress, currentStageLabel } from "@/lib/data/applications";
+import { departmentsOf } from "@/lib/data/applications";
 import type { Application } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+/** Compact link row used where a full table would be too heavy. */
 export function ApplicationRow({
   application,
   className,
@@ -13,11 +15,11 @@ export function ApplicationRow({
   application: Application;
   className?: string;
 }) {
-  const progress = workflowProgress(application);
-  const activeSteps = application.steps.filter((step) => step.state !== "approved");
-  const departments = Array.from(
-    new Set(application.tracks.map((track) => track.departmentId)),
-  );
+  const progress = applicationProgress(application);
+  const openStages = application.approvals.filter(
+    (approval) => approval.state !== "approved",
+  ).length;
+  const departments = departmentsOf(application);
 
   return (
     <Link
@@ -33,7 +35,7 @@ export function ApplicationRow({
             <span className="font-mono text-[11px] text-accent">
               {application.id}
             </span>
-            <StatusBadge kind="workflow" value={application.state} />
+            <ApplicationStatusBadge value={application.state} />
             {application.priority === "expedited" ? (
               <span className="rounded border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent">
                 Expedited
@@ -66,7 +68,10 @@ export function ApplicationRow({
         <div className="flex items-center gap-5 lg:w-80">
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between text-[11px] text-muted-2">
-              <span>{activeSteps.length} open stage{activeSteps.length === 1 ? "" : "s"}</span>
+              <span>
+                {currentStageLabel(application)} &middot;{" "}
+                {openStages} open stage{openStages === 1 ? "" : "s"}
+              </span>
               <span className="tabular">{progress}% complete</span>
             </div>
             <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-3">

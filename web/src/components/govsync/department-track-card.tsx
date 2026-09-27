@@ -9,7 +9,7 @@ import {
 import { Monogram } from "@/components/govsync/department-chip";
 import { StatusBadge } from "@/components/govsync/status-badge";
 import { departmentById, departmentLabel } from "@/lib/data/departments";
-import type { DepartmentTrack, WorkflowStep } from "@/lib/types";
+import type { Approval, DepartmentTrack } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,12 +18,12 @@ import { cn } from "@/lib/utils";
  */
 export function DepartmentTrackCard({
   track,
-  step,
-  steps,
+  approval,
+  approvals,
 }: {
   track: DepartmentTrack;
-  step?: WorkflowStep;
-  steps: WorkflowStep[];
+  approval?: Approval;
+  approvals: Approval[];
 }) {
   const department = departmentById(track.departmentId);
   const received = track.documents.filter((doc) => doc.state === "received").length;
@@ -33,7 +33,7 @@ export function DepartmentTrackCard({
     <article
       className={cn(
         "flex flex-col rounded-lg border bg-surface",
-        track.state === "blocked" && "border-danger/25",
+        (track.state === "blocked" || track.state === "action-required") && "border-danger/25",
         track.state === "under-review" && "border-warning/20",
         track.state === "approved" && "border-success/20",
         track.state === "pending" && "border-border",
@@ -81,13 +81,13 @@ export function DepartmentTrackCard({
           <Landmark className="size-3.5" />
           System: {department?.systemName ?? "GovSync platform"}
         </p>
-        {step && step.dependsOn.length > 0 ? (
+        {approval && approval.dependsOn.length > 0 ? (
           <p className="flex items-start gap-2 text-[11px] text-muted-2">
             <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
             <span>
               Depends on{" "}
-              {step.dependsOn
-                .map((id) => steps.find((candidate) => candidate.id === id)?.title)
+              {approval.dependsOn
+                .map((id) => approvals.find((candidate) => candidate.id === id)?.title)
                 .filter((title): title is string => Boolean(title))
                 .join(", ")}
             </span>

@@ -1,305 +1,290 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Bell,
-  CheckCircle2,
-  CircleAlert,
-  FileStack,
-  ListChecks,
-  Workflow,
-} from "lucide-react";
+import { ArrowRight, Bell, CheckCircle2, FileStack, ListChecks, TriangleAlert } from "lucide-react";
 
-import { ApplicationRow } from "@/components/govsync/application-row";
-import { DepartmentChip } from "@/components/govsync/department-chip";
-import { KeyFigure, MetricCard } from "@/components/govsync/metric-card";
-import {
-  NotificationList,
-  NotificationSummaryCard,
-} from "@/components/govsync/notification-list";
-import { PageHeader, SectionHeading } from "@/components/govsync/page-header";
-import { SimulatedNotice } from "@/components/govsync/simulated-notice";
-import { StatusBadge } from "@/components/govsync/status-badge";
+import { ActionRequiredCard } from "@/components/govsync/action-required-card";
+import { ActivityTimeline } from "@/components/govsync/activity-timeline";
+import { ApprovalProgress } from "@/components/govsync/approval-progress";
+import { ApplicationTable } from "@/components/govsync/application-table";
+import { ConnectedDepartments } from "@/components/govsync/connected-departments";
+import { DashboardHeader } from "@/components/govsync/dashboard-header";
+import { NotificationList, NotificationSummaryCard } from "@/components/govsync/notification-list";
+import { ProgressBar } from "@/components/govsync/progress-bar";
+import { SectionHeading } from "@/components/govsync/page-header";
+import { StatusBadge, StatusLegend } from "@/components/govsync/status-badge";
+import { SummaryCard } from "@/components/govsync/summary-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { activitiesForApplication } from "@/lib/data/activities";
 import {
   activeApplications,
-  applications,
+  applicationById,
+  applicationProgress,
+  approvedCount,
   completedApplications,
-  completedApprovalCount,
-  openStages,
-  pendingApprovalCount,
   primaryApplicationId,
 } from "@/lib/data/applications";
-import { departmentLabel } from "@/lib/data/departments";
+import {
+  pendingApprovalCount,
+  requiredActionCount,
+  requiredActions,
+} from "@/lib/data/approvals";
 import { notifications, unreadNotificationCount } from "@/lib/data/notifications";
-import { platformTotals } from "@/lib/data/events";
 
 export const metadata: Metadata = {
   title: "Dashboard",
   description:
-    "Active applications, pending approvals, completed approvals and notifications for the demo applicant identity.",
+    "Active applications, pending approvals, required actions and notifications for the demo applicant identity.",
 };
 
 export default function DashboardPage() {
-  const stages = openStages();
-  const primary = applications.find(
-    (application) => application.id === primaryApplicationId,
-  );
+  const primary = applicationById(primaryApplicationId);
+  const actions = requiredActions();
+  const recentActivity = activitiesForApplication(primaryApplicationId).slice(0, 4);
 
   return (
     <div>
-      <PageHeader
-        eyebrow="Citizen & business services"
-        title="Dashboard"
-        description="Every application filed by the demo identity, with the departments acting on each one and the approvals still open."
-        crumbs={[{ label: "Platform console" }, { label: "Dashboard" }]}
-        actions={
-          <>
-            <Button asChild variant="outline">
-              <Link href="/workflow">
-                <Workflow className="size-4" />
-                Approval workflow
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href={`/applications/${primaryApplicationId}`}>
-                <FileStack className="size-4" />
-                Start application
-              </Link>
-            </Button>
-          </>
-        }
-        meta={
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-muted-2">
-            <span>
-              Identity:{" "}
-              <span className="text-foreground">
-                Sundara Precision Castings Pvt. Ltd.
-              </span>{" "}
-              (business, linked citizen profile)
-            </span>
-            <span>
-              District: <span className="text-foreground">Nandur</span>
-            </span>
-            <span className="font-mono">Ref range GS-2026-00100 &rarr; GS-2026-00199</span>
-          </div>
-        }
+      <DashboardHeader
+        applicantName="Demo User"
+        primaryHref="/applications#start"
+        allHref="/applications"
       />
 
       <div className="space-y-6 px-6 py-6 lg:px-8">
-        {/* Key figures */}
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            label="Active applications"
-            value={activeApplications.length}
-            icon={FileStack}
-            detail={`${applications.length} filed in total, ${completedApplications.length} completed`}
-          />
-          <MetricCard
-            label="Pending approvals"
-            value={pendingApprovalCount()}
-            icon={ListChecks}
-            tone="info"
-            detail="Open stages that are not held by a dependency"
-          />
-          <MetricCard
-            label="Completed approvals"
-            value={completedApprovalCount()}
-            icon={CheckCircle2}
-            tone="positive"
-            detail="Stage decisions published to the shared record"
-          />
-          <MetricCard
-            label="Unread notifications"
-            value={unreadNotificationCount}
-            icon={Bell}
-            tone={unreadNotificationCount > 0 ? "warning" : "neutral"}
-            detail={`${notifications.length} notices in the last 30 days`}
-          />
+        {/* Step 4: the four key figures */}
+        <section aria-labelledby="summary-heading">
+          <h2 id="summary-heading" className="sr-only">
+            Application summary
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <SummaryCard
+              label="Active applications"
+              value={activeApplications.length}
+              icon={FileStack}
+              detail="Filed and not yet closed, across every service."
+              href="/applications"
+              linkLabel="View all applications"
+            />
+            <SummaryCard
+              label="Pending approvals"
+              value={pendingApprovalCount()}
+              icon={ListChecks}
+              tone="info"
+              detail="Stages queued behind an upstream decision."
+              href="/approvals"
+              linkLabel="See pending approvals"
+            />
+            <SummaryCard
+              label="Actions required"
+              value={requiredActionCount()}
+              icon={TriangleAlert}
+              tone={requiredActionCount() > 0 ? "danger" : "neutral"}
+              detail="Items only you can supply, with a demo deadline."
+              href="/approvals#actions"
+              linkLabel="Review actions"
+            />
+            <SummaryCard
+              label="Completed"
+              value={completedApplications.length}
+              icon={CheckCircle2}
+              tone="success"
+              detail="Applications closed and issued to the vault."
+              href="/applications#completed"
+              linkLabel="View completed"
+            />
+          </div>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-          {/* Active applications */}
+        {/* Step 5: active applications */}
+        <section aria-labelledby="active-heading">
           <Card>
             <CardHeader>
               <SectionHeading
                 title="Active applications"
-                description="Applications currently in progress across departments."
+                description="Every application in progress, with the stage it is waiting on."
                 action={
                   <Button asChild variant="ghost" size="sm">
-                    <Link href="/workflow">
-                      Workflow view
-                      <ArrowRight className="size-3.5" />
+                    <Link href="/applications">
+                      View All Applications
+                      <ArrowRight className="size-3.5" aria-hidden="true" />
                     </Link>
                   </Button>
                 }
               />
             </CardHeader>
             <CardContent className="px-0 py-0">
-              {activeApplications.map((application) => (
-                <ApplicationRow key={application.id} application={application} />
-              ))}
+              <ApplicationTable
+                applications={activeApplications}
+                caption="Active applications with current stage, progress and status"
+              />
             </CardContent>
           </Card>
+        </section>
 
-          {/* Pending approvals */}
-          <Card>
-            <CardHeader>
-              <SectionHeading
-                title="Pending approvals"
-                description="Every stage that still needs a decision."
-              />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {stages.map((stage) => (
-                <Link
-                  key={`${stage.applicationId}-${stage.step.id}`}
-                  href={`/applications/${stage.applicationId}`}
-                  className="block rounded-md border border-border-subtle bg-surface-2/40 p-3 transition-colors hover:border-border-strong"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {stage.step.title}
-                      </p>
-                      <p className="mt-0.5 truncate text-[11px] text-muted-2">
-                        {stage.applicationId} &middot; {stage.applicationTitle}
-                      </p>
-                    </div>
-                    <StatusBadge kind="workflow" value={stage.step.state} dot />
-                  </div>
-                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                    <DepartmentChip
-                      departmentId={stage.step.departmentId}
-                      label={departmentLabel(stage.step.departmentId)}
-                      size="sm"
+        {/* Step 7: approval progress for the primary application */}
+        {primary ? (
+          <section aria-labelledby="progress-heading">
+            <Card>
+              <CardHeader>
+                <SectionHeading
+                  title="Approval progress"
+                  description={`${primary.title} · ${primary.id}`}
+                  action={
+                    <Button asChild variant="ghost" size="sm">
+                      <Link href={`/applications/${primary.id}`}>
+                        Open application
+                        <ArrowRight className="size-3.5" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  }
+                />
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <ProgressBar
+                  value={applicationProgress(primary)}
+                  label="Overall completion"
+                  caption={`${approvedCount(primary)} of ${primary.approvals.length} stages approved · stage ${approvedCount(primary) + 1} is with ${primary.approvals[approvedCount(primary)]?.actor ?? "the departments"}`}
+                />
+                <ApprovalProgress approvals={primary.approvals} />
+                <StatusLegend kind="workflow" className="border-t border-border-subtle pt-4" />
+              </CardContent>
+            </Card>
+          </section>
+        ) : null}
+
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          {/* Step 8: action required */}
+          <section aria-labelledby="actions-heading">
+            <Card className="h-full">
+              <CardHeader>
+                <SectionHeading
+                  title="Action Required"
+                  description="The application cannot move until you respond."
+                />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {actions.length > 0 ? (
+                  actions.map((entry) => (
+                    <ActionRequiredCard
+                      key={`${entry.applicationId}-${entry.approvalTitle}`}
+                      entry={entry}
                     />
-                    <span className="text-[11px] text-muted-2">
-                      SLA {stage.step.slaDays}d &middot; since {stage.step.startedAt}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted">
+                    Nothing is waiting on you. Every stage is with a department.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Step 9: recent activity */}
+          <section aria-labelledby="activity-heading">
+            <Card className="h-full">
+              <CardHeader>
+                <SectionHeading
+                  title="Recent Activity"
+                  description={
+                    primary
+                      ? `Latest events on ${primary.id} · ${primary.title}`
+                      : "Latest events"
+                  }
+                  action={
+                    primary ? (
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/applications/${primary.id}`}>
+                          Full activity
+                          <ArrowRight className="size-3.5" aria-hidden="true" />
+                        </Link>
+                      </Button>
+                    ) : null
+                  }
+                />
+              </CardHeader>
+              <CardContent>
+                <ActivityTimeline entries={recentActivity} />
+              </CardContent>
+            </Card>
+          </section>
         </div>
 
-        {/* Completed approvals + notifications */}
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+          {/* Step 10: connected departments */}
+          <section aria-labelledby="departments-heading">
+            <Card className="h-full">
+              <CardHeader>
+                <SectionHeading
+                  title="Connected Departments"
+                  description="The departmental systems this workspace is wired to."
+                  action={
+                    <Button asChild variant="ghost" size="sm">
+                      <Link href="/integration">
+                        Integration detail
+                        <ArrowRight className="size-3.5" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  }
+                />
+              </CardHeader>
+              <CardContent>
+                <ConnectedDepartments />
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Notifications */}
+          <section aria-labelledby="notifications-heading">
+            <Card className="h-full">
+              <CardHeader>
+                <SectionHeading
+                  title="Notifications"
+                  description="Status, action and approval notices for this identity."
+                  action={
+                    <NotificationSummaryCard
+                      unread={unreadNotificationCount}
+                      total={notifications.length}
+                    />
+                  }
+                />
+              </CardHeader>
+              <CardContent className="px-0 py-0">
+                <NotificationList notifications={notifications.slice(0, 4)} />
+                <div className="border-t border-border-subtle p-3">
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link href="/notifications">
+                      <Bell className="size-3.5" aria-hidden="true" />
+                      All notifications ({notifications.length})
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        </div>
+
+        {/* Status vocabulary used across the workspace */}
+        <section aria-labelledby="status-heading">
           <Card>
             <CardHeader>
               <SectionHeading
-                title="Completed approvals"
-                description="Applications fully cleared by all involved departments."
+                title="How statuses read"
+                description="Every status is shown as an icon and a word, never colour alone."
               />
             </CardHeader>
-            <CardContent className="space-y-3">
-              {completedApplications.map((application) => {
-                const approvedSteps = application.steps.filter(
-                  (step) => step.state === "approved",
-                );
-                return (
-                  <div
-                    key={application.id}
-                    className="rounded-md border border-success/20 bg-success/5 p-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {application.title}
-                        </p>
-                        <p className="mt-0.5 font-mono text-[11px] text-muted-2">
-                          {application.id}
-                        </p>
-                      </div>
-                      <StatusBadge kind="workflow" value="approved" />
-                    </div>
-                    <p className="mt-2 text-[11px] text-muted">
-                      {approvedSteps.map((step) => step.title).join(" · ")}
-                    </p>
-                    <p className="mt-1.5 text-[11px] text-muted-2 tabular">
-                      Closed {application.lastUpdated} &middot;{" "}
-                      {application.elapsedDays} of {application.slaTargetDays} SLA days
-                      used
-                    </p>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Card id="notifications">
-            <CardHeader>
-              <SectionHeading
-                title="Notifications"
-                description="Status, clarification and approval notices for this identity."
-                action={<NotificationSummaryCard unread={unreadNotificationCount} total={notifications.length} />}
-              />
-            </CardHeader>
-            <CardContent className="px-0 py-0">
-              <NotificationList notifications={notifications} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Platform context */}
-        <Card>
-          <CardHeader>
-            <SectionHeading
-              title="Platform context"
-              description="What the interoperability layer is doing behind these applications."
-              action={
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/integration">
-                    Integration dashboard
-                    <ArrowRight className="size-3.5" />
-                  </Link>
-                </Button>
-              }
-            />
-          </CardHeader>
-          <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <KeyFigure
-                label="Departments connected"
-                value={`${platformTotals.activeConnectors} simulated connectors`}
-                hint="Revenue, Pollution, Labour, Fire, Municipal"
-              />
-              <KeyFigure
-                label="Interop events (24h)"
-                value={new Intl.NumberFormat("en-IN").format(platformTotals.requests)}
-                hint="Requests across all department endpoints"
-              />
-              <KeyFigure
-                label="Pending workflows"
-                value={String(platformTotals.pendingWorkflows)}
-                hint="Instances waiting on a departmental decision"
-              />
-              <KeyFigure
-                label="Showcase application"
-                value={primaryApplicationId}
-                hint={primary ? primary.title : "Not available"}
-              />
-            </div>
-            <div className="rounded-md border border-warning/25 bg-warning/8 p-4">
-              <div className="flex items-center gap-2">
-                <CircleAlert className="size-4 text-warning" />
-                <p className="text-xs font-semibold uppercase tracking-wider text-warning">
-                  Why a stage can read &ldquo;blocked&rdquo;
-                </p>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge kind="workflow" value="approved" />
+                <StatusBadge kind="workflow" value="under-review" />
+                <StatusBadge kind="workflow" value="pending" />
+                <StatusBadge kind="workflow" value="action-required" />
+                <StatusBadge kind="workflow" value="blocked" />
+                <StatusBadge kind="application" value="completed" />
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-muted">
-                The fire NOC stage for {primaryApplicationId} cannot proceed until
-                the Pollution Control consent reference is published. GovSync holds
-                the stage instead of letting the applicant discover the gap, and
-                forwards the artefact automatically once the upstream stage
-                completes.
-              </p>
-              <SimulatedNotice variant="compact" className="mt-3" />
-            </div>
-          </CardContent>
-        </Card>
+              <StatusLegend kind="application" className="border-t border-border-subtle pt-4" />
+            </CardContent>
+          </Card>
+        </section>
       </div>
     </div>
   );

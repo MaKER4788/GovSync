@@ -2,11 +2,14 @@ import {
   Ban,
   CircleCheck,
   CircleDashed,
+  CircleEllipsis,
   Clock3,
+  FileCheck2,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
 import type {
+  ApplicationState,
   DocumentStatus,
   EventStatus,
   HealthState,
@@ -51,6 +54,14 @@ export const workflowStateMeta: Record<WorkflowState, StatusMeta> = {
     text: "text-info",
     dot: "bg-info",
   },
+  "action-required": {
+    label: "Action Required",
+    description: "Waiting for the applicant to supply something before the stage can move.",
+    icon: FileCheck2,
+    chip: "border-danger/35 bg-danger/10 text-danger",
+    text: "text-danger",
+    dot: "bg-danger",
+  },
   blocked: {
     label: "Blocked",
     description: "Held by workflow policy until a dependency is satisfied.",
@@ -58,6 +69,41 @@ export const workflowStateMeta: Record<WorkflowState, StatusMeta> = {
     chip: "border-danger/35 bg-danger/10 text-danger",
     text: "text-danger",
     dot: "bg-danger",
+  },
+};
+
+export const applicationStateMeta: Record<ApplicationState, StatusMeta> = {
+  "in-progress": {
+    label: "In Progress",
+    description: "With the departments, no applicant action outstanding.",
+    icon: CircleEllipsis,
+    chip: "border-info/30 bg-info/10 text-info",
+    text: "text-info",
+    dot: "bg-info",
+  },
+  "under-review": {
+    label: "Under Review",
+    description: "A departmental officer is examining the application right now.",
+    icon: Clock3,
+    chip: "border-warning/35 bg-warning/10 text-warning",
+    text: "text-warning",
+    dot: "bg-warning",
+  },
+  "action-required": {
+    label: "Action Required",
+    description: "The application cannot move until the applicant responds.",
+    icon: FileCheck2,
+    chip: "border-danger/35 bg-danger/10 text-danger",
+    text: "text-danger",
+    dot: "bg-danger",
+  },
+  completed: {
+    label: "Completed",
+    description: "Every stage cleared and the final record is in the applicant vault.",
+    icon: CircleCheck,
+    chip: "border-success/35 bg-success/10 text-success",
+    text: "text-success",
+    dot: "bg-success",
   },
 };
 
@@ -143,7 +189,7 @@ export const severityMeta: Record<Severity, StatusMeta> = {
   error: {
     label: "Action Required",
     description: "Applicant input is needed to continue.",
-    icon: Ban,
+    icon: FileCheck2,
     chip: "border-danger/35 bg-danger/10 text-danger",
     text: "text-danger",
     dot: "bg-danger",
@@ -181,7 +227,15 @@ export const workflowStateOrder: WorkflowState[] = [
   "approved",
   "under-review",
   "pending",
+  "action-required",
   "blocked",
+];
+
+export const applicationStateOrder: ApplicationState[] = [
+  "action-required",
+  "under-review",
+  "in-progress",
+  "completed",
 ];
 
 export const healthStateOrder: HealthState[] = [

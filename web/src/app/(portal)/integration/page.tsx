@@ -10,6 +10,7 @@ import {
   ListChecks,
   Network,
   PlugZap,
+  ShieldCheck,
   Workflow,
 } from "lucide-react";
 
@@ -25,7 +26,7 @@ import { StatusBadge, StatusLegend } from "@/components/govsync/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { departments } from "@/lib/data/departments";
+import { departments, SIMULATION } from "@/lib/data/departments";
 import {
   eventCounters,
   interopEvents,
@@ -274,9 +275,15 @@ export default function IntegrationPage() {
                     <p className="text-xs font-medium text-foreground">
                       {department.name}
                     </p>
-                    <Badge variant="secondary" className="font-mono">
-                      {department.apiVersion}
-                    </Badge>
+                    <span className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 rounded border border-success/30 bg-success/8 px-1.5 py-0.5 text-[10px] font-medium text-success">
+                        <ShieldCheck className="size-2.5" aria-hidden="true" />
+                        {SIMULATION.connectionLabel}
+                      </span>
+                      <Badge variant="secondary" className="font-mono">
+                        {department.apiVersion}
+                      </Badge>
+                    </span>
                   </div>
                   <p className="mt-1.5 font-mono text-[10px] text-muted-2">
                     {department.baseUrl}
@@ -337,10 +344,10 @@ export default function IntegrationPage() {
           </Card>
         </div>
 
-        <p className="flex items-center gap-2 text-[11px] text-muted-2">
+        <p className="flex flex-wrap items-center gap-2 text-[11px] text-muted-2">
           <ListChecks className="size-3.5" />
-          Figures are generated locally for demonstration and are not measurements
-          of any live department system.
+          {SIMULATION.connectionNote}. Figures are generated locally for
+          demonstration and are not measurements of any live department system.
         </p>
       </div>
     </div>

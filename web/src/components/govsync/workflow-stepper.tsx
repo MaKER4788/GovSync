@@ -1,4 +1,4 @@
-import { ArrowRight, Clock, FileSignature, Link2, Timer } from "lucide-react";
+import { ArrowRight, Clock, FileCheck2, FileSignature, Link2, Timer } from "lucide-react";
 
 import { DepartmentChip } from "@/components/govsync/department-chip";
 import { StatusBadge } from "@/components/govsync/status-badge";
@@ -14,20 +14,25 @@ import { cn } from "@/lib/utils";
  */
 export function WorkflowStepper({
   steps,
+  approvals,
   className,
   dense = false,
 }: {
-  steps: WorkflowStep[];
+  /** Renamed to `approvals` across the portal; `steps` stays for the marketing page. */
+  steps?: WorkflowStep[];
+  approvals?: WorkflowStep[];
   className?: string;
   dense?: boolean;
 }) {
+  const items = approvals ?? steps ?? [];
+
   return (
     <ol className={cn("relative", className)}>
-      {steps.map((step, index) => {
+      {items.map((step, index) => {
         const meta = workflowStateMeta[step.state];
-        const isLast = index === steps.length - 1;
+        const isLast = index === items.length - 1;
         const dependencies = step.dependsOn
-          .map((id) => steps.find((candidate) => candidate.id === id))
+          .map((id) => items.find((candidate) => candidate.id === id))
           .filter((candidate): candidate is WorkflowStep => Boolean(candidate));
 
         return (
@@ -59,7 +64,7 @@ export function WorkflowStepper({
               className={cn(
                 "min-w-0 flex-1 rounded-lg border bg-surface-2/40",
                 dense ? "p-3" : "p-4",
-                step.state === "blocked"
+                step.state === "blocked" || step.state === "action-required"
                   ? "border-danger/25"
                   : step.state === "under-review"
                     ? "border-warning/20"
@@ -147,6 +152,18 @@ export function WorkflowStepper({
                 <Clock className="mt-0.5 size-3.5 shrink-0 text-muted-2" />
                 {step.remark}
               </p>
+
+              {step.action ? (
+                <p className="mt-3 flex items-start gap-2 rounded-md border border-danger/25 bg-danger/8 px-3 py-2 text-xs leading-relaxed text-foreground">
+                  <FileCheck2 className="mt-0.5 size-3.5 shrink-0 text-danger" />
+                  <span>
+                    <span className="font-medium text-danger">Action required: </span>
+                    {step.action.item}. Requested by{" "}
+                    {departmentLabel(step.action.departmentId)} on{" "}
+                    {step.action.requestedAt}. Demo deadline {step.action.deadline}.
+                  </span>
+                </p>
+              ) : null}
             </div>
           </li>
         );
@@ -156,10 +173,18 @@ export function WorkflowStepper({
 }
 
 /** Compact horizontal chain used above the fold on detail pages. */
-export function WorkflowChain({ steps }: { steps: WorkflowStep[] }) {
+export function WorkflowChain({
+  steps,
+  approvals,
+}: {
+  steps?: WorkflowStep[];
+  approvals?: WorkflowStep[];
+}) {
+  const items = approvals ?? steps ?? [];
+
   return (
     <ol className="flex flex-wrap items-center gap-2">
-      {steps.map((step, index) => {
+      {items.map((step, index) => {
         const meta = workflowStateMeta[step.state];
         const department = departmentById(step.departmentId);
         return (
@@ -176,7 +201,7 @@ export function WorkflowChain({ steps }: { steps: WorkflowStep[] }) {
                 {department?.code ?? "GS"}
               </span>
             </span>
-            {index < steps.length - 1 ? (
+            {index < items.length - 1 ? (
               <ArrowRight className="size-3.5 text-muted-2" />
             ) : null}
           </li>

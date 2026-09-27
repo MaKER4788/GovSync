@@ -4,7 +4,20 @@
  * this prototype represents a live connection to any government system.
  */
 
-export type WorkflowState = "approved" | "under-review" | "pending" | "blocked";
+/** State of a single approval stage. */
+export type WorkflowState =
+  | "approved"
+  | "under-review"
+  | "pending"
+  | "action-required"
+  | "blocked";
+
+/** State of the application as a whole, as shown to the applicant. */
+export type ApplicationState =
+  | "in-progress"
+  | "under-review"
+  | "action-required"
+  | "completed";
 
 export type HealthState = "operational" | "degraded" | "maintenance";
 
@@ -37,6 +50,8 @@ export interface Department {
   authScheme: string;
   capabilities: string[];
   services: string[];
+  /** Short description of the simulated service this connector exposes. */
+  summary: string;
 }
 
 export interface RequiredDocument {
@@ -50,7 +65,7 @@ export interface RequiredDocument {
 export interface DepartmentTrack {
   departmentId: string;
   state: WorkflowState;
-  stepId: string;
+  approvalId: string;
   lastUpdated: string;
   dependsOn: string[];
   documents: RequiredDocument[];
@@ -59,22 +74,47 @@ export interface DepartmentTrack {
   remark: string;
 }
 
-export interface WorkflowStep {
+/** Something the applicant must supply before a stage can progress. */
+export interface ApprovalAction {
+  item: string;
+  departmentId: string;
+  requestedAt: string;
+  /** Demonstration deadline, not a statutory one. */
+  deadline: string;
+  note?: string;
+}
+
+export interface Approval {
   id: string;
   order: number;
   title: string;
   departmentId: string;
   state: WorkflowState;
+  /**
+   * Share of this stage that is complete, 0-100. An approved stage is
+   * always 100. Stages that are waiting behind a dependency still carry
+   * the preparation work already done on them, which is what makes an
+   * application-level percentage meaningful before the first decision.
+   */
+  completion: number;
   description: string;
   startedAt: string;
   completedAt?: string;
   actor: string;
   slaDays: number;
   dependsOn: string[];
-  /** Fields this step publishes into the interoperability layer. */
+  /** Fields this stage publishes into the interoperability layer. */
   outputArtifacts: string[];
+  /** Set when the applicant has to act for this stage to move. */
+  action?: ApprovalAction;
   remark: string;
 }
+
+/**
+ * Presentation-only shape used by the marketing page's hand-written showcase
+ * chain, which carries no completion figures. New code should use `Approval`.
+ */
+export type WorkflowStep = Omit<Approval, "completion"> & { completion?: number };
 
 export interface ApplicationDocument {
   id: string;
@@ -87,7 +127,7 @@ export interface ApplicationDocument {
   origin: string;
 }
 
-export interface TimelineEntry {
+export interface Activity {
   id: string;
   at: string;
   actor: string;
@@ -109,19 +149,19 @@ export interface Application {
   filedVia: string;
   submittedAt: string;
   lastUpdated: string;
-  state: WorkflowState;
+  state: ApplicationState;
   priority: "standard" | "expedited";
   dueAt: string;
   slaTargetDays: number;
   elapsedDays: number;
   summary: string;
   tracks: DepartmentTrack[];
-  steps: WorkflowStep[];
+  approvals: Approval[];
   documents: ApplicationDocument[];
-  timeline: TimelineEntry[];
+  activities: Activity[];
 }
 
-export interface NotificationItem {
+export interface Notification {
   id: string;
   title: string;
   message: string;
@@ -173,4 +213,14 @@ export interface ArchitectureLayer {
   description: string;
   components: ArchitectureComponent[];
   protocols: string[];
+}
+
+export interface ServiceCatalogueEntry {
+  id: string;
+  name: string;
+  description: string;
+  departmentIds: string[];
+  typicalStages: number;
+  slaTargetDays: number;
+  applicantKinds: ApplicantKind[];
 }

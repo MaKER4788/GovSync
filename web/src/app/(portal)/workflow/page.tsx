@@ -20,9 +20,9 @@ import {
 } from "@/components/govsync/workflow-stepper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { openApprovals } from "@/lib/data/approvals";
 import {
   applicationById,
-  openStages,
   primaryApplicationId,
 } from "@/lib/data/applications";
 import { departmentLabel } from "@/lib/data/departments";
@@ -36,15 +36,16 @@ export const metadata: Metadata = {
 
 export default function WorkflowPage() {
   const application = applicationById(primaryApplicationId);
-  const stages = openStages();
+  const stages = openApprovals();
 
   if (!application) return null;
 
-  const approved = application.steps.filter((step) => step.state === "approved");
-  const inFlight = application.steps.filter(
-    (step) => step.state === "under-review" || step.state === "blocked",
+  const approvals = application.approvals;
+  const approved = approvals.filter((approval) => approval.state === "approved");
+  const inFlight = approvals.filter(
+    (approval) => approval.state === "under-review" || approval.state === "blocked",
   );
-  const queued = application.steps.filter((step) => step.state === "pending");
+  const queued = approvals.filter((approval) => approval.state === "pending");
 
   return (
     <div>
@@ -83,12 +84,12 @@ export default function WorkflowPage() {
             />
           </CardHeader>
           <CardContent className="space-y-5">
-            <WorkflowChain steps={application.steps} />
+            <WorkflowChain approvals={approvals} />
             <StatusLegend kind="workflow" className="border-t border-border-subtle pt-4" />
             <div className="grid gap-4 border-t border-border-subtle pt-4 sm:grid-cols-2 xl:grid-cols-4">
               <KeyFigure
                 label="Total stages"
-                value={String(application.steps.length)}
+                value={String(approvals.length)}
                 hint="Across four departments"
               />
               <KeyFigure
@@ -120,7 +121,7 @@ export default function WorkflowPage() {
               />
             </CardHeader>
             <CardContent>
-              <WorkflowStepper steps={application.steps} />
+              <WorkflowStepper approvals={approvals} />
             </CardContent>
           </Card>
 
@@ -134,25 +135,25 @@ export default function WorkflowPage() {
                 />
               </CardHeader>
               <CardContent className="space-y-3">
-                {application.steps
-                  .filter((step) => step.dependsOn.length > 0)
-                  .map((step) => (
+                {approvals
+                  .filter((approval) => approval.dependsOn.length > 0)
+                  .map((approval) => (
                     <div
-                      key={step.id}
+                      key={approval.id}
                       className="rounded-md border border-border-subtle bg-surface-2/40 p-3"
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-[11px] text-muted-2">
-                          Step {step.order}
+                          Stage {approval.order}
                         </span>
                         <span className="text-xs font-medium text-foreground">
-                          {step.title}
+                          {approval.title}
                         </span>
-                        <StatusBadge kind="workflow" value={step.state} dot />
+                        <StatusBadge kind="workflow" value={approval.state} dot />
                       </div>
                       <div className="mt-2 space-y-1.5">
-                        {step.dependsOn.map((dependencyId) => {
-                          const dependency = application.steps.find(
+                        {approval.dependsOn.map((dependencyId) => {
+                          const dependency = approvals.find(
                             (candidate) => candidate.id === dependencyId,
                           );
                           if (!dependency) return null;
@@ -231,21 +232,21 @@ export default function WorkflowPage() {
               <CardContent className="space-y-2">
                 {stages.map((stage) => (
                   <Link
-                    key={`${stage.applicationId}-${stage.step.id}`}
+                    key={`${stage.applicationId}-${stage.approval.id}`}
                     href={`/applications/${stage.applicationId}`}
                     className="flex items-center gap-3 rounded-md border border-border-subtle p-2.5 transition-colors hover:border-border-strong"
                   >
                     <Workflow className="size-3.5 shrink-0 text-muted-2" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-medium text-foreground">
-                        {stage.step.title}
+                        {stage.approval.title}
                       </p>
                       <p className="truncate text-[11px] text-muted-2">
                         {stage.applicationId} &middot;{" "}
-                        {departmentLabel(stage.step.departmentId)}
+                        {departmentLabel(stage.approval.departmentId)}
                       </p>
                     </div>
-                    <StatusBadge kind="workflow" value={stage.step.state} dot />
+                    <StatusBadge kind="workflow" value={stage.approval.state} dot />
                   </Link>
                 ))}
               </CardContent>
@@ -263,8 +264,8 @@ export default function WorkflowPage() {
           </CardHeader>
           <CardContent className="grid gap-4 lg:grid-cols-4">
             {application.tracks.map((track) => {
-              const step = application.steps.find(
-                (candidate) => candidate.id === track.stepId,
+              const approval = approvals.find(
+                (candidate) => candidate.id === track.approvalId,
               );
               return (
                 <div
@@ -280,7 +281,7 @@ export default function WorkflowPage() {
                     <StatusBadge kind="workflow" value={track.state} dot />
                   </div>
                   <p className="mt-3 text-xs font-medium text-foreground">
-                    {step?.title ?? "Stage"}
+                    {approval?.title ?? "Stage"}
                   </p>
                   <p className="mt-1.5 text-[11px] leading-relaxed text-muted-2">
                     {track.remark}

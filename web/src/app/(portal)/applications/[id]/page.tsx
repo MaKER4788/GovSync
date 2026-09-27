@@ -6,13 +6,13 @@ import {
   Building2,
   CalendarClock,
   Download,
-  History,
   Info,
   Layers,
   ShieldAlert,
   User,
 } from "lucide-react";
 
+import { ActivityTimeline } from "@/components/govsync/activity-timeline";
 import { ApplicationRow } from "@/components/govsync/application-row";
 import { DepartmentTrackCard } from "@/components/govsync/department-track-card";
 import { DefinitionRow, KeyFigure } from "@/components/govsync/metric-card";
@@ -26,13 +26,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { activitiesForApplication } from "@/lib/data/activities";
 import {
   applicationById,
+  applicationProgress,
   applications,
-  workflowProgress,
 } from "@/lib/data/applications";
-import { departmentLabel } from "@/lib/data/departments";
+import { departmentLabel, SIMULATION } from "@/lib/data/departments";
 import { interopEvents } from "@/lib/data/events";
+import { formatDate, formatStamp } from "@/lib/format";
 import { workflowStateMeta } from "@/lib/status";
 
 interface PageProps {
@@ -61,14 +63,16 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
 
   if (!application) notFound();
 
-  const progress = workflowProgress(application);
-  const blockedSteps = application.steps.filter((step) => step.state === "blocked");
+  const progress = applicationProgress(application);
+  const approvals = application.approvals;
+  const blockedApprovals = approvals.filter((approval) => approval.state === "blocked");
   const relatedEvents = interopEvents
     .filter((event) => event.applicationId === application.id)
     .slice(0, 8);
   const otherApplications = applications.filter(
     (candidate) => candidate.id !== application.id,
   );
+  const applicationActivities = activitiesForApplication(application.id);
 
   return (
     <div>
@@ -77,8 +81,8 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
         title={application.title}
         description={application.summary}
         crumbs={[
-          { label: "Platform console", href: "/dashboard" },
-          { label: "Applications", href: "/dashboard" },
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Applications", href: "/applications" },
           { label: application.id },
         ]}
         actions={
@@ -100,13 +104,13 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
             <Badge variant="info" className="font-mono">
               {application.id}
             </Badge>
-            <StatusBadge kind="workflow" value={application.state} />
+            <StatusBadge kind="application" value={application.state} />
             {application.priority === "expedited" ? (
               <Badge variant="info">Expedited</Badge>
             ) : null}
             <span className="text-xs text-muted-2">
-              Submitted {application.submittedAt} &middot; last updated{" "}
-              {application.lastUpdated}
+              Submitted {formatDate(application.submittedAt)} &middot; last updated{" "}
+              {formatStamp(application.lastUpdated)}
             </span>
           </div>
         }
@@ -119,11 +123,11 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
             <CardHeader>
               <SectionHeading
                 title="Workflow chain"
-                description="Six stages, four departments, one application reference."
+                description={`${approvals.length} stages, ${application.tracks.length} departments, one application reference.`}
               />
             </CardHeader>
             <CardContent className="space-y-4">
-              <WorkflowChain steps={application.steps} />
+              <WorkflowChain approvals={approvals} />
               <div className="flex flex-col gap-3 border-t border-border-subtle pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between text-[11px] text-muted-2">
@@ -174,7 +178,7 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
                 <DefinitionRow term="District">{application.district}</DefinitionRow>
                 <DefinitionRow term="Channel">{application.filedVia}</DefinitionRow>
                 <DefinitionRow term="Due by">
-                  <span className="tabular">{application.dueAt}</span>
+                  <span className="tabular">{formatDate(application.dueAt)}</span>
                 </DefinitionRow>
               </dl>
             </CardContent>
@@ -182,30 +186,31 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
         </section>
 
         {/* Blocked stage explanation */}
-        {blockedSteps.length > 0 ? (
+        {blockedApprovals.length > 0 ? (
           <section className="rounded-lg border border-danger/25 bg-danger/8 p-5">
             <div className="flex items-start gap-3">
               <ShieldAlert className="mt-0.5 size-5 shrink-0 text-danger" />
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-foreground">
-                  {blockedSteps.length} stage{blockedSteps.length === 1 ? " is" : "s are"}{" "}
-                  held by a dependency
+                  {blockedApprovals.length} stage
+                  {blockedApprovals.length === 1 ? " is" : "s are"} held by a
+                  dependency
                 </p>
                 <ul className="mt-2 space-y-1.5">
-                  {blockedSteps.map((step) => {
-                    const meta = workflowStateMeta[step.state];
+                  {blockedApprovals.map((approval) => {
+                    const meta = workflowStateMeta[approval.state];
                     return (
-                      <li key={step.id} className="text-xs leading-relaxed text-muted">
+                      <li key={approval.id} className="text-xs leading-relaxed text-muted">
                         <span className="font-medium text-foreground">
-                          Step {step.order} &middot; {step.title}
+                          Stage {approval.order} &middot; {approval.title}
                         </span>{" "}
-                        &mdash; {departmentLabel(step.departmentId)}. {step.remark}{" "}
+                        &mdash; {departmentLabel(approval.departmentId)}. {approval.remark}{" "}
                         <span className={meta.text}>
                           Upstream:{" "}
-                          {step.dependsOn
+                          {approval.dependsOn
                             .map(
                               (dependencyId) =>
-                                application.steps.find(
+                                approvals.find(
                                   (candidate) => candidate.id === dependencyId,
                                 )?.title ?? dependencyId,
                             )
@@ -252,7 +257,7 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
                   />
                 </CardHeader>
                 <CardContent>
-                  <WorkflowStepper steps={application.steps} />
+                  <WorkflowStepper approvals={approvals} />
                 </CardContent>
               </Card>
 
@@ -270,11 +275,11 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
                     <KeyFigure
                       label="Elapsed"
                       value={`${application.elapsedDays} days`}
-                      hint={`Due ${application.dueAt}`}
+                      hint={`Due ${formatDate(application.dueAt)}`}
                     />
                     <KeyFigure
                       label="Stages complete"
-                      value={`${application.steps.filter((step) => step.state === "approved").length} of ${application.steps.length}`}
+                      value={`${approvals.filter((approval) => approval.state === "approved").length} of ${approvals.length}`}
                       hint="Published to the shared record"
                     />
                     <KeyFigure
@@ -337,10 +342,10 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
                 <DepartmentTrackCard
                   key={track.departmentId}
                   track={track}
-                  steps={application.steps}
-                  step={application.steps.find(
-                    (candidate) => candidate.id === track.stepId,
+                  approval={approvals.find(
+                    (candidate) => candidate.id === track.approvalId,
                   )}
+                  approvals={approvals}
                 />
               ))}
             </div>
@@ -387,45 +392,16 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="timeline">
+          <TabsContent value="timeline" id="activity">
             <Card>
               <CardHeader>
                 <SectionHeading
                   title="Application timeline"
-                  description="Every state transition, with the actor that caused it."
+                  description="Every state transition, with the actor that caused it. Timestamps are relative to the frozen demo day."
                 />
               </CardHeader>
               <CardContent>
-                <ol className="relative space-y-0">
-                  {application.timeline.map((entry, index) => (
-                    <li key={entry.id} className="flex gap-4 pb-5 last:pb-0">
-                      <div className="flex flex-col items-center">
-                        <span className="relative z-10 flex size-7 items-center justify-center rounded-full border border-border bg-surface-2">
-                          <History className="size-3.5 text-accent" />
-                        </span>
-                        {index < application.timeline.length - 1 ? (
-                          <span className="mt-1 w-px flex-1 bg-border" />
-                        ) : null}
-                      </div>
-                      <div className="min-w-0 flex-1 pb-1">
-                        <div className="flex flex-wrap items-baseline justify-between gap-2">
-                          <p className="text-sm font-medium text-foreground">
-                            {entry.action}
-                          </p>
-                          <p className="font-mono text-[11px] text-muted-2 tabular">
-                            {entry.at}
-                          </p>
-                        </div>
-                        <p className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-2">
-                          {entry.actor} &middot; {entry.actorRole}
-                        </p>
-                        <p className="mt-1.5 text-xs leading-relaxed text-muted">
-                          {entry.detail}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+                <ActivityTimeline entries={applicationActivities} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -491,7 +467,7 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
 
         <p className="flex items-center gap-2 text-[11px] text-muted-2">
           <CalendarClock className="size-3.5" />
-          Data frozen at 12 Mar 2026, 14:32 IST. All departmental references on
+          Data frozen at {SIMULATION.frozenAt}. All departmental references on
           this page are fictional.
         </p>
       </div>

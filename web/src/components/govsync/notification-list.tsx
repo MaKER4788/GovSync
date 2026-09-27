@@ -2,14 +2,14 @@ import { BellRing } from "lucide-react";
 import Link from "next/link";
 
 import { StatusBadge } from "@/components/govsync/status-badge";
-import type { NotificationItem } from "@/lib/types";
+import type { Notification } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function NotificationList({
   notifications,
   className,
 }: {
-  notifications: NotificationItem[];
+  notifications: Notification[];
   className?: string;
 }) {
   return (
@@ -72,14 +72,12 @@ export function NotificationSummaryCard({
   total: number;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3">
-      <BellRing className="size-4 text-accent" />
-      <div>
-        <p className="text-sm font-semibold text-foreground tabular">
-          {unread} unread of {total}
-        </p>
-        <p className="text-xs text-muted-2">Portal, email and SMS delivery</p>
-      </div>
-    </div>
+    <p className="flex items-center gap-2 text-[11px] text-muted tabular">
+      <BellRing className="size-3.5 text-accent" aria-hidden="true" />
+      <span>
+        <span className="font-semibold text-foreground">{unread} unread</span> of{" "}
+        {total} notifications
+      </span>
+    </p>
   );
 }

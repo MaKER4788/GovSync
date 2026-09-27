@@ -1,14 +1,16 @@
 import {
+  Bell,
+  Boxes,
+  CircleHelp,
   FileStack,
   LayoutDashboard,
+  ListChecks,
   Network,
   ScrollText,
+  Settings,
   Workflow,
-  Boxes,
   type LucideIcon,
 } from "lucide-react";
-
-import { primaryApplicationId } from "@/lib/data/applications";
 
 export interface NavItem {
   label: string;
@@ -17,19 +19,48 @@ export interface NavItem {
   description: string;
 }
 
-export const portalNav: NavItem[] = [
+export interface NavGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+/** The services an applicant uses. */
+export const serviceNav: NavItem[] = [
   {
     label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
-    description: "Applications, approvals and notifications",
+    description: "Everything in progress, in one view",
   },
   {
-    label: "Application",
-    href: `/applications/${primaryApplicationId}`,
+    label: "Applications",
+    href: "/applications",
     icon: FileStack,
-    description: "Manufacturing Unit Approval",
+    description: "Every application on this identity",
   },
+  {
+    label: "Approvals",
+    href: "/approvals",
+    icon: ListChecks,
+    description: "Stages waiting on a decision",
+  },
+  {
+    label: "Documents",
+    href: "/documents",
+    icon: ScrollText,
+    description: "One shared document set",
+  },
+  {
+    label: "Notifications",
+    href: "/notifications",
+    icon: Bell,
+    description: "Status, action and approval notices",
+  },
+];
+
+/** The platform surfaces an evaluator can inspect. */
+export const platformNav: NavItem[] = [
   {
     label: "Approval Workflow",
     href: "/workflow",
@@ -56,8 +87,35 @@ export const portalNav: NavItem[] = [
   },
 ];
 
+export const portalNavGroups: NavGroup[] = [
+  { id: "services", label: "Services", items: serviceNav },
+  { id: "platform", label: "Platform", items: platformNav },
+];
+
+/** Secondary items, pinned to the bottom of the navigation. */
+export const utilityNav: NavItem[] = [
+  {
+    label: "Settings",
+    href: "/settings",
+    icon: Settings,
+    description: "Display and notification preferences",
+  },
+  {
+    label: "Help",
+    href: "/help",
+    icon: CircleHelp,
+    description: "How the demo works and where to look",
+  },
+];
+
+export const portalNav: NavItem[] = [
+  ...serviceNav,
+  ...platformNav,
+  ...utilityNav,
+];
+
+/** Departments are informational in the navigation, not separate routes. */
 export function isActivePath(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === href;
-  if (href.startsWith("/applications/")) return pathname.startsWith("/applications");
   return pathname === href || pathname.startsWith(`${href}/`);
 }

@@ -1,4 +1,6 @@
 import {
+  applicationStateMeta,
+  applicationStateOrder,
   documentStatusMeta,
   eventStatusMeta,
   healthMeta,
@@ -9,6 +11,7 @@ import {
   type StatusMeta,
 } from "@/lib/status";
 import type {
+  ApplicationState,
   DocumentStatus,
   EventStatus,
   HealthState,
@@ -19,6 +22,7 @@ import { cn } from "@/lib/utils";
 
 const registry = {
   workflow: workflowStateMeta,
+  application: applicationStateMeta,
   health: healthMeta,
   event: eventStatusMeta,
   severity: severityMeta,
@@ -27,11 +31,23 @@ const registry = {
 
 type RegistryKey = keyof typeof registry;
 
+type StatusValue =
+  | WorkflowState
+  | ApplicationState
+  | HealthState
+  | EventStatus
+  | Severity
+  | DocumentStatus;
+
 function resolve(kind: RegistryKey, value: string): StatusMeta {
   const table = registry[kind] as unknown as Record<string, StatusMeta | undefined>;
   return table[value] ?? workflowStateMeta.pending;
 }
 
+/**
+ * Every status is shown as an icon plus a word. Colour is only ever a
+ * reinforcement, so the state is still readable in monochrome.
+ */
 export function StatusBadge({
   kind,
   value,
@@ -40,7 +56,7 @@ export function StatusBadge({
   dot = false,
 }: {
   kind: RegistryKey;
-  value: WorkflowState | HealthState | EventStatus | Severity | DocumentStatus;
+  value: StatusValue;
   className?: string;
   withIcon?: boolean;
   dot?: boolean;
@@ -66,17 +82,32 @@ export function StatusBadge({
   );
 }
 
+/** Application-level status, for the applicant's own view of a case. */
+export function ApplicationStatusBadge({
+  value,
+  className,
+}: {
+  value: ApplicationState;
+  className?: string;
+}) {
+  return (
+    <StatusBadge kind="application" value={value} className={className} />
+  );
+}
+
 export function StatusLegend({
   kind,
   className,
 }: {
-  kind: "workflow" | "health";
+  kind: "workflow" | "health" | "application";
   className?: string;
 }) {
   const entries: StatusMeta[] =
     kind === "workflow"
       ? workflowStateOrder.map((value) => workflowStateMeta[value])
-      : healthStateOrder.map((value) => healthMeta[value]);
+      : kind === "application"
+        ? applicationStateOrder.map((value) => applicationStateMeta[value])
+        : healthStateOrder.map((value) => healthMeta[value]);
 
   return (
     <ul className={cn("flex flex-wrap items-center gap-x-6 gap-y-3", className)}>

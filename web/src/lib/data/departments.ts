@@ -1,4 +1,5 @@
-import type { ArchitectureLayer, Department } from "@/lib/types";
+import type { ArchitectureLayer, Department, ServiceCatalogueEntry } from "@/lib/types";
+import { DEMO_TODAY } from "@/lib/format";
 
 /**
  * SIMULATED ENVIRONMENT NOTICE
@@ -17,8 +18,12 @@ export const SIMULATION = {
     "All department records, events and metrics on this site are locally generated mock data.",
   notConnected:
     "Not connected to any live government system. No real citizen, business or department data is present or transmitted.",
-  frozenAt: "12 Mar 2026, 14:32 IST",
+  frozenAt: `${DEMO_TODAY}, 14:32 IST`,
   timezone: "IST (UTC+05:30)",
+  /** Label shown wherever a connector is presented to the applicant. */
+  connectionLabel: "Connected (Demo)",
+  connectionCaption: "Demo Integration",
+  connectionNote: "Simulated Connection",
 } as const;
 
 export const departments: Department[] = [
@@ -36,7 +41,7 @@ export const departments: Department[] = [
     p95LatencyMs: 412,
     requests24h: 18420,
     successRatePct: 99.7,
-    lastHandshakeAt: "12 Mar 2026, 14:31:48",
+    lastHandshakeAt: "27 Sep 2026, 14:31:48",
     authScheme: "OAuth 2.0 client_credentials + mTLS",
     capabilities: [
       "Land parcel lookup",
@@ -50,6 +55,7 @@ export const departments: Department[] = [
       "Deed Registration",
       "Tax Receipt Issuance",
     ],
+    summary: "Land records, assessment and receipts for the applicant's premises.",
   },
   {
     id: "pol",
@@ -65,7 +71,7 @@ export const departments: Department[] = [
     p95LatencyMs: 1870,
     requests24h: 9260,
     successRatePct: 94.2,
-    lastHandshakeAt: "12 Mar 2026, 14:30:12",
+    lastHandshakeAt: "27 Sep 2026, 14:30:12",
     authScheme: "OAuth 2.0 client_credentials",
     capabilities: [
       "Consent issuance",
@@ -78,6 +84,7 @@ export const departments: Department[] = [
       "Hazardous Waste Authorisation",
       "Compliance Notice Registry",
     ],
+    summary: "Environmental consent, sampling records and compliance notices.",
   },
   {
     id: "lab",
@@ -93,7 +100,7 @@ export const departments: Department[] = [
     p95LatencyMs: 540,
     requests24h: 7130,
     successRatePct: 99.4,
-    lastHandshakeAt: "12 Mar 2026, 14:31:20",
+    lastHandshakeAt: "27 Sep 2026, 14:31:20",
     authScheme: "OAuth 2.0 client_credentials + signed payload",
     capabilities: [
       "Establishment registration",
@@ -107,6 +114,7 @@ export const departments: Department[] = [
       "Trade Licence Endorsement",
       "Inspection Scheduling",
     ],
+    summary: "Establishment registration, factory licensing and inspection records.",
   },
   {
     id: "fire",
@@ -122,7 +130,7 @@ export const departments: Department[] = [
     p95LatencyMs: 305,
     requests24h: 4980,
     successRatePct: 99.1,
-    lastHandshakeAt: "12 Mar 2026, 14:29:55",
+    lastHandshakeAt: "27 Sep 2026, 14:29:55",
     authScheme: "OAuth 2.0 client_credentials + mTLS",
     capabilities: [
       "NOC issuance",
@@ -136,6 +144,7 @@ export const departments: Department[] = [
       "Occupancy Certificate Support",
       "NOC Revocation Notice",
     ],
+    summary: "No-objection certificates, egress checks and occupancy classification.",
   },
   {
     id: "mun",
@@ -151,7 +160,7 @@ export const departments: Department[] = [
     p95LatencyMs: 890,
     requests24h: 6410,
     successRatePct: 96.8,
-    lastHandshakeAt: "12 Mar 2026, 13:58:02",
+    lastHandshakeAt: "27 Sep 2026, 13:58:02",
     authScheme: "OAuth 2.0 client_credentials",
     capabilities: [
       "Building permission",
@@ -165,6 +174,7 @@ export const departments: Department[] = [
       "Property Tax Receipt",
       "Occupancy Certificate",
     ],
+    summary: "Building permission, sanctioned plans, licences and local receipts.",
   },
 ];
 
@@ -172,6 +182,80 @@ export const departmentById = (id: string): Department | undefined =>
   departments.find((department) => department.id === id);
 
 export const GOVSYNC_NODE_ID = "govsync";
+
+/** Departments shown in the portal navigation, in the order applicants meet them. */
+export const connectedDepartmentIds = ["rev", "pol", "lab", "fire"] as const;
+
+export const connectedDepartments: Department[] = connectedDepartmentIds
+  .map((id) => departmentById(id))
+  .filter((department): department is Department => Boolean(department));
+
+/**
+ * The services an applicant can start. Intake itself is out of scope for this
+ * phase, so the catalogue is presented as the list a live portal would offer.
+ */
+export const serviceCatalogue: ServiceCatalogueEntry[] = [
+  {
+    id: "manufacturing-unit",
+    name: "Industrial Permissions",
+    description:
+      "One application for a manufacturing unit: land verification, pollution consent, fire NOC, labour registration and the consolidated unit permit.",
+    departmentIds: ["rev", "pol", "lab", "fire"],
+    typicalStages: 6,
+    slaTargetDays: 18,
+    applicantKinds: ["business"],
+  },
+  {
+    id: "building-permission",
+    name: "Building Permission",
+    description:
+      "Sanction for a new or extended building, coordinated with fire egress clearance and labour capacity endorsement.",
+    departmentIds: ["mun", "fire", "lab"],
+    typicalStages: 4,
+    slaTargetDays: 28,
+    applicantKinds: ["business", "citizen"],
+  },
+  {
+    id: "trade-licensing",
+    name: "Trade Licensing",
+    description:
+      "Trade licence for commercial premises, with the fire occupancy pre-check handled inside the same application.",
+    departmentIds: ["mun", "fire"],
+    typicalStages: 3,
+    slaTargetDays: 22,
+    applicantKinds: ["business"],
+  },
+  {
+    id: "factory-licence",
+    name: "Factory Licence",
+    description:
+      "Factory licence and establishment registration for an operating industrial unit.",
+    departmentIds: ["lab", "fire"],
+    typicalStages: 3,
+    slaTargetDays: 14,
+    applicantKinds: ["business"],
+  },
+  {
+    id: "property-services",
+    name: "Property & Revenue Services",
+    description:
+      "Property tax receipts, encumbrance certificates and other register searches from the revenue department.",
+    departmentIds: ["rev"],
+    typicalStages: 2,
+    slaTargetDays: 7,
+    applicantKinds: ["citizen", "business"],
+  },
+  {
+    id: "environmental-clearance",
+    name: "Environmental Clearance",
+    description:
+      "Consent to establish or operate, plus hazardous waste authorisations for industrial premises.",
+    departmentIds: ["pol"],
+    typicalStages: 3,
+    slaTargetDays: 14,
+    applicantKinds: ["business"],
+  },
+];
 
 /** Human label for a department id, including the GovSync platform itself. */
 export function departmentLabel(id: string): string {
