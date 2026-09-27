@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { IntegrationHealthPanel } from '@/components/govsync/integration/integration-health-panel';
-import { IntegrationMap } from '@/components/govsync/integration/integration-map';
-import { DepartmentStatusPanel } from '@/components/govsync/integration/department-status-panel';
 import { LiveEventStream } from '@/components/govsync/integration/live-event-stream';
 import { IntegrationDebug } from '@/components/govsync/integration/integration-debug';
 import { FailureSimulator } from '@/components/govsync/integration/failure-simulator';
@@ -14,59 +12,70 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Activity, RefreshCw, PlugZap, TriangleAlert, MousePointer, SquareDot } from 'lucide-react';
 
+// Simple types for demo
+interface HealthData {
+  health: { id: string }[];
+  integrationMetrics: {
+    totalRequests: number;
+    failed: number;
+  };
+}
+
+interface IntegrationEvent {
+  id: string;
+}
+
+interface WorkflowSummary {
+  id: string;
+}
+
 export default function AdminPage() {
-  const [healthData, setHealthData] = useState<any>(null);
-  const [events, setEvents] = useState<any[]>([]);
-  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [events, setEvents] = useState<IntegrationEvent[]>([]);
+  const [workflows, setWorkflows] = useState<WorkflowSummary[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
-  // Use variables to satisfy linter if needed
-  const _ = healthData && events.length && workflows.length && isSyncing && syncResult;
-
   // Fetch department health
-  useEffect(() => {
-    async function fetchHealth() {
-      try {
-        const res = await fetch('/api/govsync/health');
-        const data = await res.json();
-        setHealthData(data);
-      } catch (err) {
-        console.error('Failed to fetch health', err);
-      }
+  async function fetchHealthData() {
+    try {
+      const res = await fetch('/api/govsync/health');
+      const data = await res.json();
+      setHealthData(data);
+    } catch (err) {
+      console.error('Failed to fetch health', err);
     }
-    fetchHealth();
-  }, []);
+  }
 
   // Fetch integration events
-  useEffect(() => {
-    async function fetchEvents() {
-      try {
-        const res = await fetch('/api/govsync/integration/events');
-        const data = await res.json();
-        setEvents(data);
-      } catch (err) {
-        console.error('Failed to fetch events', err);
-      }
+  async function fetchIntegrationEvents() {
+    try {
+      const res = await fetch('/api/govsync/integration/events');
+      const data = await res.json();
+      setEvents(data);
+    } catch (err) {
+      console.error('Failed to fetch events', err);
     }
-    fetchEvents();
-  }, []);
+  }
 
   // Fetch active workflows (simplified: from applications or workflow store)
-  useEffect(() => {
-    async function fetchWorkflows() {
-      try {
-        // Use existing applications data as proxy for active workflows
-        const res = await fetch('/api/govsync/applications');
-        const data = await res.json();
-        // Filter to active/in progress applications
-        const active = data.filter((app: any) => app.status !== 'COMPLETED' && app.status !== 'REJECTED');
-        setWorkflows(active.slice(0, 5)); // Show top 5
-      } catch (err) {
-        console.error('Failed to fetch workflows', err);
-      }
+  async function fetchActiveWorkflows() {
+    try {
+      // Use existing applications data as proxy for active workflows
+      const res = await fetch('/api/govsync/applications');
+      const data = await res.json();
+      // Filter to active/in progress applications
+      const active = data.filter((app: any) => app.status !== 'COMPLETED' && app.status !== 'REJECTED');
+      setWorkflows(active.slice(0, 5)); // Show top 5
+    } catch (err) {
+      console.error('Failed to fetch workflows', err);
     }
-    fetchWorkflows();
+  }
+
+  useEffect(() => {
+    fetchHealthData();
+    fetchIntegrationEvents();
+    fetchActiveWorkflows();
   }, []);
 
   const handleSyncAll = async () => {
@@ -87,9 +96,9 @@ export default function AdminPage() {
       setSyncResult('Sync completed successfully');
       // Refetch data to reflect updates
       setTimeout(() => {
-        fetchHealth();
-        fetchEvents();
-        fetchWorkflows();
+        fetchHealthData();
+        fetchIntegrationEvents();
+        fetchActiveWorkflows();
       }, 1000);
     } catch (err: any) {
       setSyncResult(`Sync failed: ${err.message}`);
@@ -108,7 +117,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to simulate');
       // Refetch to show updated health
-      setTimeout(fetchHealth, 500);
+      setTimeout(fetchHealthData, 500);
     } catch (err: any) {
       alert(`Failed to simulate failure: ${err.message}`);
     }
@@ -123,7 +132,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to restore');
-      setTimeout(fetchHealth, 500);
+      setTimeout(fetchHealthData, 500);
     } catch (err: any) {
       alert(`Failed to restore department: ${err.message}`);
     }
@@ -182,17 +191,11 @@ export default function AdminPage() {
         <IntegrationHealthPanel />
       </section>
 
-      {/* Department Status */}
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-4">Department Status</h2>
-        <DepartmentStatusPanel />
-      </section>
-
       {/* Live Event Stream */}
       <section className="mb-6">
         <h2 className="text-xl font-semibold mb-4">Live Event Stream</h2>
         <div className="card border rounded-lg p-4">
-          <LiveEventStream limit={10} />
+          <LiveEventStream />
         </div>
       </section>
 
@@ -212,8 +215,10 @@ export default function AdminPage() {
                   Syncing...
                 </>
               ) : (
-                <PlugZap className="mr-2 h-4 w-4" />
-                Sync All Departments
+                <>
+                  <PlugZap className="mr-2 h-4 w-4" />
+                  Sync All Departments
+                </>
               )}
             </Button>
             {syncResult && (
@@ -256,11 +261,11 @@ export default function AdminPage() {
         </div>
       </section>
 
-      {/* Integration Map (optional) */}
+      {/* Failure Simulator */}
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-4">Department Connectors Map</h2>
+        <h2 className="text-xl font-semibold mb-4">Failure Simulator</h2>
         <div className="card border rounded-lg p-4">
-          <IntegrationMap />
+          <FailureSimulator />
         </div>
       </section>
     </main>
