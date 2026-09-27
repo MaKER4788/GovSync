@@ -6,9 +6,7 @@ import {
   Building2,
   CalendarClock,
   Download,
-  Info,
   Layers,
-  ShieldAlert,
   User,
 } from "lucide-react";
 
@@ -18,10 +16,8 @@ import { DepartmentTrackCard } from "@/components/govsync/department-track-card"
 import { DefinitionRow, KeyFigure } from "@/components/govsync/metric-card";
 import { PageHeader, SectionHeading } from "@/components/govsync/page-header";
 import { StatusBadge, StatusLegend } from "@/components/govsync/status-badge";
-import {
-  WorkflowChain,
-  WorkflowStepper,
-} from "@/components/govsync/workflow-stepper";
+import { UnifiedWorkflow } from "@/components/govsync/workflow/unified-workflow";
+import { WorkflowChain } from "@/components/govsync/workflow-stepper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -32,10 +28,10 @@ import {
   applicationProgress,
   applications,
 } from "@/lib/data/applications";
-import { departmentLabel, SIMULATION } from "@/lib/data/departments";
+import { SIMULATION } from "@/lib/data/departments";
 import { interopEvents } from "@/lib/data/events";
 import { formatDate, formatStamp } from "@/lib/format";
-import { workflowStateMeta } from "@/lib/status";
+import { buildWorkflowSnapshot } from "@/lib/workflow/model";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -65,7 +61,6 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
 
   const progress = applicationProgress(application);
   const approvals = application.approvals;
-  const blockedApprovals = approvals.filter((approval) => approval.state === "blocked");
   const relatedEvents = interopEvents
     .filter((event) => event.applicationId === application.id)
     .slice(0, 8);
@@ -73,6 +68,7 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
     (candidate) => candidate.id !== application.id,
   );
   const applicationActivities = activitiesForApplication(application.id);
+  const workflowSnapshot = buildWorkflowSnapshot(application);
 
   return (
     <div>
@@ -185,54 +181,6 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
           </Card>
         </section>
 
-        {/* Blocked stage explanation */}
-        {blockedApprovals.length > 0 ? (
-          <section className="rounded-lg border border-danger/25 bg-danger/8 p-5">
-            <div className="flex items-start gap-3">
-              <ShieldAlert className="mt-0.5 size-5 shrink-0 text-danger" />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">
-                  {blockedApprovals.length} stage
-                  {blockedApprovals.length === 1 ? " is" : "s are"} held by a
-                  dependency
-                </p>
-                <ul className="mt-2 space-y-1.5">
-                  {blockedApprovals.map((approval) => {
-                    const meta = workflowStateMeta[approval.state];
-                    return (
-                      <li key={approval.id} className="text-xs leading-relaxed text-muted">
-                        <span className="font-medium text-foreground">
-                          Stage {approval.order} &middot; {approval.title}
-                        </span>{" "}
-                        &mdash; {departmentLabel(approval.departmentId)}. {approval.remark}{" "}
-                        <span className={meta.text}>
-                          Upstream:{" "}
-                          {approval.dependsOn
-                            .map(
-                              (dependencyId) =>
-                                approvals.find(
-                                  (candidate) => candidate.id === dependencyId,
-                                )?.title ?? dependencyId,
-                            )
-                            .join(", ")}
-                          .
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <p className="mt-3 flex items-start gap-2 text-[11px] text-muted-2">
-                  <Info className="mt-0.5 size-3.5 shrink-0" />
-                  In a production deployment the applicant would see this state
-                  with a projected unblock date. No stage is silently skipped and
-                  no department is asked for a document another department has
-                  not yet issued.
-                </p>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
         {/* Tabs */}
         <Tabs defaultValue="workflow">
           <TabsList>
@@ -248,20 +196,10 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
           </TabsList>
 
           <TabsContent value="workflow">
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-              <Card>
-                <CardHeader>
-                  <SectionHeading
-                    title="Stage detail"
-                    description="State, dependencies, artefacts published and departmental remarks for every stage."
-                  />
-                </CardHeader>
-                <CardContent>
-                  <WorkflowStepper approvals={approvals} />
-                </CardContent>
-              </Card>
+            <div className="space-y-6">
+              <UnifiedWorkflow snapshot={workflowSnapshot} />
 
-              <div className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
                   <CardHeader>
                     <SectionHeading title="SLA position" />
@@ -284,7 +222,9 @@ export default async function ApplicationDetailsPage({ params }: PageProps) {
                     />
                     <KeyFigure
                       label="Priority"
-                      value={application.priority === "expedited" ? "Expedited" : "Standard"}
+                      value={
+                        application.priority === "expedited" ? "Expedited" : "Standard"
+                      }
                       hint="Routing and escalation band"
                     />
                   </CardContent>

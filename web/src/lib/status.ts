@@ -3,6 +3,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleEllipsis,
+  CircleSlash,
   Clock3,
   FileCheck2,
   Wrench,
@@ -66,6 +67,14 @@ export const workflowStateMeta: Record<WorkflowState, StatusMeta> = {
     label: "Blocked",
     description: "Held by workflow policy until a dependency is satisfied.",
     icon: Ban,
+    chip: "border-danger/35 bg-danger/10 text-danger",
+    text: "text-danger",
+    dot: "bg-danger",
+  },
+  rejected: {
+    label: "Rejected",
+    description: "Decided against; a correction was asked for before the stage can reopen.",
+    icon: CircleSlash,
     chip: "border-danger/35 bg-danger/10 text-danger",
     text: "text-danger",
     dot: "bg-danger",
@@ -229,6 +238,7 @@ export const workflowStateOrder: WorkflowState[] = [
   "pending",
   "action-required",
   "blocked",
+  "rejected",
 ];
 
 export const applicationStateOrder: ApplicationState[] = [

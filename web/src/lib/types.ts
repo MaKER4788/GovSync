@@ -10,7 +10,8 @@ export type WorkflowState =
   | "under-review"
   | "pending"
   | "action-required"
-  | "blocked";
+  | "blocked"
+  | "rejected";
 
 /** State of the application as a whole, as shown to the applicant. */
 export type ApplicationState =
@@ -54,13 +55,31 @@ export interface Department {
   summary: string;
 }
 
+/**
+ * Who owes a document requirement.
+ *
+ * A department's own inputs are applicant obligations and hold the stage in
+ * `action-required`. A departmental reference, for example the fire NOC number
+ * forwarded by the platform, is expected to arrive on its own and must not be
+ * presented to the applicant as something they owe.
+ */
+export type DocumentObligation = "applicant" | "department" | "platform";
+
 export interface RequiredDocument {
   name: string;
   mandatory: boolean;
+  owedBy: DocumentObligation;
   state: "received" | "pending" | "waived";
   receivedAt?: string;
   note?: string;
 }
+
+/**
+ * Document state as the Phase 3 workflow presents it. `received` records map
+ * to `submitted` while a stage is still open and to `verified` once the stage
+ * that asked for the document has approved it.
+ */
+export type StageDocumentState = "submitted" | "verified" | "pending";
 
 export interface DepartmentTrack {
   departmentId: string;

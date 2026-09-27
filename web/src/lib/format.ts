@@ -126,3 +126,52 @@ export function daysBetween(from: string, to: string): number {
     86_400_000;
   return Math.max(0, Math.round(days));
 }
+
+/**
+ * A display timestamp advanced by a whole number of minutes.
+ *
+ * The demo simulation uses this instead of the host clock, so a reviewer who
+ * clicks the same controls twice in the same order sees exactly the same
+ * timestamps. Carries across month, year and daylight boundaries by
+ * normalising through UTC rather than the machine's local zone.
+ */
+export function addMinutes(value: string, minutes: number): string {
+  const stamp = parseStamp(value);
+  if (!stamp) return value;
+
+  const shifted = new Date(
+    Date.UTC(stamp.year, stamp.month, stamp.day, stamp.hours, stamp.minutes) +
+      minutes * 60_000,
+  );
+
+  const day = String(shifted.getUTCDate()).padStart(2, "0");
+  const month = MONTHS[shifted.getUTCMonth()] ?? "Jan";
+  const hours = String(shifted.getUTCHours()).padStart(2, "0");
+  const mins = String(shifted.getUTCMinutes()).padStart(2, "0");
+
+  return `${day} ${month} ${shifted.getUTCFullYear()}, ${hours}:${mins}`;
+}
+
+/** The latest of a set of display timestamps. Empty input returns the demo day. */
+export function latestStamp(values: readonly string[]): string {
+  return values.reduce<string>(
+    (latest, candidate) =>
+      stampOrder(candidate) > stampOrder(latest) ? candidate : latest,
+    DEMO_TODAY,
+  );
+}
+
+/** Calendar date advanced by a whole number of days, e.g. `30 Sep 2026`. */
+export function addCalendarDays(value: string, days: number): string {
+  const stamp = parseStamp(value);
+  if (!stamp) return value;
+
+  const shifted = new Date(
+    Date.UTC(stamp.year, stamp.month, stamp.day + days),
+  );
+
+  const day = String(shifted.getUTCDate()).padStart(2, "0");
+  const month = MONTHS[shifted.getUTCMonth()] ?? "Jan";
+
+  return `${day} ${month} ${shifted.getUTCFullYear()}`;
+}

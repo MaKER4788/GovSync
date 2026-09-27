@@ -73,24 +73,28 @@ const manufacturingUnit: Application = {
         {
           name: "Registered sale deed (copy)",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "18 Sep 2026, 09:31",
         },
         {
           name: "7/12 land extract",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "18 Sep 2026, 09:33",
         },
         {
           name: "Site plan with built-up area",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "18 Sep 2026, 11:02",
         },
         {
           name: "Property tax assessment receipt",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "18 Sep 2026, 11:15",
         },
@@ -110,18 +114,21 @@ const manufacturingUnit: Application = {
         {
           name: "Consent to Establish application",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "26 Sep 2026, 16:20",
         },
         {
           name: "Effluent analysis report (3rd party)",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "22 Sep 2026, 14:08",
         },
         {
           name: "Revised site plan showing the inspection access",
           mandatory: true,
+          owedBy: "applicant",
           state: "pending",
           note: "Requested by the board on 27 Sep 2026. Demo deadline 30 Sep 2026.",
         },
@@ -141,18 +148,21 @@ const manufacturingUnit: Application = {
         {
           name: "Fire layout drawing (signed)",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "20 Sep 2026, 10:12",
         },
         {
           name: "Fire fighting equipment schedule",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "22 Sep 2026, 09:45",
         },
         {
           name: "Pollution consent reference",
           mandatory: true,
+          owedBy: "department",
           state: "pending",
           note: "Issued automatically to the Fire Department once pollution approval completes.",
         },
@@ -172,18 +182,21 @@ const manufacturingUnit: Application = {
         {
           name: "Memorandum and articles of association",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "18 Sep 2026, 09:36",
         },
         {
           name: "Factory plan with machinery list",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "19 Sep 2026, 10:20",
         },
         {
           name: "Fire NOC reference number",
           mandatory: true,
+          owedBy: "platform",
           state: "pending",
           note: "Forwarded by GovSync when the fire NOC is issued.",
         },
@@ -487,18 +500,21 @@ const restaurantLicence: Application = {
         {
           name: "Premises rent agreement",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "24 Sep 2026, 11:12",
         },
         {
           name: "List of menu items with non-veg declaration",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "24 Sep 2026, 11:18",
         },
         {
           name: "Kitchen exhaust plan",
           mandatory: true,
+          owedBy: "applicant",
           state: "pending",
           note: "Requested by the fire department on 26 Sep 2026.",
         },
@@ -518,12 +534,14 @@ const restaurantLicence: Application = {
         {
           name: "Building layout drawing",
           mandatory: true,
+          owedBy: "applicant",
           state: "pending",
           note: "Applicant must provide the building layout so egress can be measured.",
         },
         {
           name: "Fire equipment invoice",
           mandatory: false,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "24 Sep 2026, 11:25",
         },
@@ -690,18 +708,21 @@ const commercialBuilding: Application = {
         {
           name: "Sanctioned plan drawing set",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "21 Sep 2026, 16:04",
         },
         {
           name: "Structural safety certificate",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "22 Sep 2026, 12:30",
         },
         {
           name: "Scaled layout with exit widths",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "23 Sep 2026, 09:50",
         },
@@ -720,6 +741,7 @@ const commercialBuilding: Application = {
         {
           name: "Updated access and egress plan",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "23 Sep 2026, 09:52",
         },
@@ -738,6 +760,7 @@ const commercialBuilding: Application = {
         {
           name: "Machinery and shift plan",
           mandatory: true,
+          owedBy: "applicant",
           state: "received",
           receivedAt: "21 Sep 2026, 15:55",
         },
@@ -1343,6 +1366,7 @@ function buildArchivedApplication(seed: ArchivedSeed): Application {
       .map((document) => ({
         name: document.name,
         mandatory: true,
+        owedBy: "applicant",
         state: "received",
         receivedAt: document.uploadedAt,
       }));
