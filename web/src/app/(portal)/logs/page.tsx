@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { EventLogTable } from "@/components/govsync/event-log-table";
+import { LiveEventStream } from "@/components/govsync/integration/live-event-stream";
 import { KeyFigure, MetricCard } from "@/components/govsync/metric-card";
 import { PageHeader, SectionHeading } from "@/components/govsync/page-header";
 import { SimulatedNotice } from "@/components/govsync/simulated-notice";
@@ -153,6 +154,8 @@ export default function LogsPage() {
 
         <SimulatedNotice />
 
+        <LiveEventStream />
+
         <div className="grid gap-6 2xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <Card>
             <CardHeader>
@@ -248,26 +251,38 @@ export default function LogsPage() {
               <CardHeader>
                 <SectionHeading
                   title="Audit guarantees"
-                  description="Properties the platform would guarantee for every entry."
+                  description="What the simulated layer actually does, and what it only pretends to do."
                 />
               </CardHeader>
               <CardContent className="space-y-2.5 text-xs leading-relaxed text-muted">
                 <p className="flex items-start gap-2.5">
                   <Hash className="mt-0.5 size-3.5 shrink-0 text-accent" />
-                  Every event carries a correlation id, schema version, timestamp
-                  and payload hash, so a decision can be traced to the exact
-                  message that caused it.
+                  Every attempt the layer records carries a correlation id, an
+                  operation, a timestamp, a latency and the principal that caused
+                  it, so a decision can be traced to the message behind it. There is
+                  no payload hash and no schema version, because nothing here
+                  validates a schema.
                 </p>
                 <p className="flex items-start gap-2.5">
                   <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" />
-                  Audit entries are append-only and hash chained. Nothing in the
-                  log can be edited or removed after it is written.
+                  The event and audit logs are append-only for the life of the
+                  server process: entries are pushed, never edited. They are{" "}
+                  <strong className="font-semibold text-foreground">not</strong>{" "}
+                  hash chained and there is no tamper evidence, and they are held in
+                  memory, so a restart discards them.
                 </p>
                 <p className="flex items-start gap-2.5">
                   <Layers className="mt-0.5 size-3.5 shrink-0 text-accent" />
-                  Logs are partitioned by department connector, application
-                  reference and actor, so departmental teams see their own scope
-                  without exposing other departments&rsquo; data.
+                  Reads are separated by scope: a role only reaches the applications
+                  and departments its scopes allow, and an unauthorised call is
+                  refused and recorded rather than served. Row-level partitioning of
+                  the log itself is not implemented.
+                </p>
+                <p className="flex items-start gap-2.5">
+                  <ScrollText className="mt-0.5 size-3.5 shrink-0 text-accent" />
+                  Authentication is a placeholder. The role arrives in a request
+                  header and is trusted, so this demonstrates authorisation and
+                  audit, not authentication.
                 </p>
               </CardContent>
             </Card>
@@ -299,8 +314,8 @@ export default function LogsPage() {
             />
             <KeyFigure
               label="Retention"
-              value="7 years"
-              hint="Simulated retention policy for approval records"
+              value="None yet"
+              hint="The simulated ledger is in memory and is lost on restart; a real one would keep approval records for years"
             />
           </CardContent>
         </Card>

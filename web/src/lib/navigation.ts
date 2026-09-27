@@ -1,6 +1,7 @@
 import {
   Bell,
   Boxes,
+  Bug,
   CircleHelp,
   FileStack,
   LayoutDashboard,
@@ -72,6 +73,12 @@ export const platformNav: NavItem[] = [
     href: "/integration",
     icon: Network,
     description: "Department connectors and API health",
+  },
+  {
+    label: "Integration Debug",
+    href: "/integration/debug",
+    icon: Bug,
+    description: "Live traces, retries and audit log",
   },
   {
     label: "Event Logs",

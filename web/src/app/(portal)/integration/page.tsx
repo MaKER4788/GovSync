@@ -19,6 +19,8 @@ import {
   DepartmentCard,
   DepartmentStatRow,
 } from "@/components/govsync/department-card";
+import { FailureSimulator } from "@/components/govsync/integration/failure-simulator";
+import { IntegrationMap } from "@/components/govsync/integration/integration-map";
 import { KeyFigure, MetricCard } from "@/components/govsync/metric-card";
 import { PageHeader, SectionHeading } from "@/components/govsync/page-header";
 import { SimulatedNotice } from "@/components/govsync/simulated-notice";
@@ -62,6 +64,12 @@ export default function IntegrationPage() {
         actions={
           <>
             <Button asChild variant="outline">
+              <Link href="/integration/debug">
+                <ShieldCheck className="size-4" />
+                Integration debug
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link href="/architecture">
                 <Network className="size-4" />
                 Architecture
@@ -80,6 +88,19 @@ export default function IntegrationPage() {
 
       <div className="space-y-6 px-6 py-6 lg:px-8">
         <SimulatedNotice />
+
+        {/* Live layer, read from the GovSync API at request time */}
+        <section>
+          <SectionHeading
+            title="Live integration layer"
+            description="Read from /api/govsync at request time. Everything above this heading is the frozen Phase 1 and Phase 2 dataset; everything on it is measured during this server session."
+            className="mb-3"
+          />
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+            <IntegrationMap />
+            <FailureSimulator />
+          </div>
+        </section>
 
         {/* Headline metrics */}
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">

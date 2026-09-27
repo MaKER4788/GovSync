@@ -8,6 +8,7 @@ import { ApprovalProgress } from "@/components/govsync/approval-progress";
 import { ApplicationTable } from "@/components/govsync/application-table";
 import { ConnectedDepartments } from "@/components/govsync/connected-departments";
 import { DashboardHeader } from "@/components/govsync/dashboard-header";
+import { IntegrationHealthPanel } from "@/components/govsync/integration/integration-health-panel";
 import { NotificationList, NotificationSummaryCard } from "@/components/govsync/notification-list";
 import { ProgressBar } from "@/components/govsync/progress-bar";
 import { SectionHeading } from "@/components/govsync/page-header";
@@ -208,6 +209,10 @@ export default function DashboardPage() {
             </Card>
           </section>
         </div>
+
+        <section aria-labelledby="integration-health-heading">
+          <IntegrationHealthPanel />
+        </section>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           {/* Step 10: connected departments */}

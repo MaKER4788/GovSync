@@ -1,6 +1,11 @@
 import { addCalendarDays, addMinutes } from "@/lib/format";
 import { departmentLabel } from "@/lib/data/departments";
-import type { Activity, ApprovalAction, StageDocumentState } from "@/lib/types";
+import type {
+  Activity,
+  ApprovalAction,
+  StageDocumentState,
+  WorkflowState,
+} from "@/lib/types";
 import { resolveStage, requirementId } from "@/lib/workflow/model";
 import { summariseWorkflow } from "@/lib/workflow/summary";
 import type {
@@ -595,6 +600,46 @@ function reject(
       ),
     ],
   };
+}
+
+/**
+ * Reconciles the workflow with statuses read back from departmental systems.
+ *
+ * A department is the system of record for its own decision, so when a
+ * connector reports a state that differs from the one held here, that state
+ * wins. A stage that has already been decided is never downgraded, and the four
+ * workflow rules are re-settled afterwards exactly as they are for a local
+ * command, so a reconciled graph is indistinguishable from a locally driven one.
+ *
+ * Pure, like every other entry point here. Callers pass only the states they
+ * trust; a stage absent from `authoritative` is left untouched.
+ */
+export function applyAuthoritativeStates(
+  snapshot: WorkflowSnapshot,
+  authoritative: Record<string, WorkflowState>,
+  clock: string = addMinutes(snapshot.clockStart, CLOCK_STEP_MINUTES),
+): { stages: WorkflowStage[]; applied: { stageId: string; from: WorkflowState; to: WorkflowState }[] } {
+  const applied: { stageId: string; from: WorkflowState; to: WorkflowState }[] = [];
+
+  const rewritten = snapshot.stages.map((stage) => {
+    const reported = authoritative[stage.id];
+    if (!reported || reported === stage.state) return stage;
+    const decided = stage.state === "approved" || stage.state === "rejected" || stage.state === "blocked";
+    if (decided) return stage;
+    applied.push({ stageId: stage.id, from: stage.state, to: reported });
+    return {
+      ...stage,
+      state: reported,
+      completion: reported === "approved" ? 100 : stage.completion,
+      ...(reported === "approved" ? { completedAt: clock } : {}),
+    } satisfies WorkflowStage;
+  });
+
+  if (applied.length === 0) {
+    return { stages: snapshot.stages, applied };
+  }
+
+  return { stages: reevaluate(cascade(rewritten)), applied };
 }
 
 /** Human sentence for a dependency chip. */
