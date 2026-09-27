@@ -118,6 +118,7 @@ export const utilityNav: NavItem[] = [
 export const portalNav: NavItem[] = [
   ...serviceNav,
   ...platformNav,
+  { label: 'Integration Center', href: '/admin', icon: Network, description: 'Monitor and operate connected department systems' },
   ...utilityNav,
 ];
 
