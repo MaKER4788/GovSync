@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   GovSync design tokens
+   Dark navy / blue institutional palette. No external font or asset
+   dependencies: the interface is self-contained for offline demos.
+------------------------------------------------------------------- */
+
+:root {
+  /* surfaces */
+  --background: #05080f;
+  --surface: #0a101d;
+  --surface-2: #0e1626;
+  --surface-3: #131d31;
+  --surface-inset: #070c16;
+
+  /* lines */
+  --border: #1b2740;
+  --border-strong: #2a3a59;
+  --border-subtle: #141d30;
+
+  /* text */
+  --foreground: #e9eefb;
+  --muted: #93a4c0;
+  --muted-2: #6b7c99;
+
+  /* brand + signal */
+  --primary: #2563eb;
+  --primary-hover: #3b82f6;
+  --primary-foreground: #f4f8ff;
+  --accent: #38bdf8;
+
+  /* status semantics */
+  --success: #10b981;
+  --success-foreground: #04160f;
+  --warning: #f59e0b;
+  --warning-foreground: #1c1203;
+  --danger: #ef4444;
+  --danger-foreground: #1f0606;
+  --info: #38bdf8;
+  --info-foreground: #041a24;
+  --neutral: #64748b;
+  --neutral-foreground: #f1f5f9;
+
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-inset: var(--surface-inset);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-subtle: var(--border-subtle);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-neutral: var(--neutral);
+  --color-neutral-foreground: var(--neutral-foreground);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  --font-sans:
+    "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono", "Cascadia Mono", ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* institutional grid backdrop, deliberately restrained */
+  .grid-backdrop {
+    background-image:
+      linear-gradient(to right, rgba(37, 99, 235, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(37, 99, 235, 0.07) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .hairline-top {
+    box-shadow: inset 0 1px 0 0 var(--border);
+  }
+
+  ::selection {
+    background-color: rgba(37, 99, 235, 0.35);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
