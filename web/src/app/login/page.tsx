@@ -1,44 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { getUserByEmail } from '@/lib/auth/users';
-import { encrypt } from '@/lib/auth/session';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { getUserByEmail } from '@/lib/auth/users.ts';
+import { loginAction } from '@/lib/auth/action.ts';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
-    try {
-      const user = getUserByEmail(email);
-      if (!user) {
-        setError('Invalid credentials');
-        return;
-      }
-      // Create session
-      const session = await encrypt({ userId: user.id, role: user.role, department: user.department });
-      const cookieStore = cookies();
-      cookieStore.set('govsync_session', session, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24, // 24 hours
-        path: '/',
-      });
-      redirect('/dashboard');
-    } catch (err) {
-      setError('Failed to sign in');
-    } finally {
-      setLoading(false);
+    const result = await loginAction(formData);
+    if (result?.error) {
+      setError(result.error);
     }
-  };
+    setLoading(false);
+  }
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
@@ -49,7 +29,7 @@ export default function LoginPage() {
         </p>
         <span className="text-xs bg-muted/20 rounded px-2 py-0.5">SIMULATION MODE</span>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form action={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="sr-only">
               Email
