@@ -1,0 +1,21 @@
+# node modules
+node_modules/
+# environment variables
+.env
+.env.*
+# log files
+*.log
+# build output
+dist/
+# coverage
+coverage/
+# OS generated files
+.DS_Store
+# npm package lock
+package-lock.json
+# yarn lock
+yarn.lock
+# IDE files
+.idea/
+.vscode/
+.jetbrains/
