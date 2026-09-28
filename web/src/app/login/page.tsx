@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { getUserByEmail } from '@/lib/auth/users.ts';
-import { loginAction } from '@/lib/auth/action.ts';
+import { getUserByEmail } from '@/lib/auth/users';
+import { loginAction } from '@/lib/auth/action';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
